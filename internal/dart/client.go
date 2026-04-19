@@ -292,10 +292,26 @@ func SearchByStockCode(apiKey, code string) (*CorpCode, error) {
 }
 
 // FindCompany searches by stock code (all digits) or company name.
+// corpAliases maps common Korean display names to DART-registered corp names.
+var corpAliases = map[string]string{
+	"네이버":    "NAVER",
+	"카카오모빌리티": "카카오모빌리티",
+	"엔씨":     "엔씨소프트",
+	"넥슨":     "NEXON",
+	"크래프톤":   "크래프톤",
+	"배민":     "우아한형제들",
+}
+
 func FindCompany(apiKey, query string) (*CorpCode, error) {
 	if isDigits(query) {
 		return SearchByStockCode(apiKey, query)
 	}
+
+	// alias 먼저 확인
+	if mapped, ok := corpAliases[query]; ok {
+		query = mapped
+	}
+
 	results, err := SearchByName(apiKey, query)
 	if err != nil {
 		return nil, err
@@ -303,12 +319,23 @@ func FindCompany(apiKey, query string) (*CorpCode, error) {
 	if len(results) == 0 {
 		return nil, nil
 	}
+
+	// 정확 일치 우선
 	for _, c := range results {
 		if strings.EqualFold(c.CorpName, query) {
 			return &c, nil
 		}
 	}
-	return &results[0], nil
+
+	// 상장사(종목코드 있는 곳) 첫 번째 선택
+	for _, c := range results {
+		if strings.TrimSpace(c.StockCode) != "" {
+			return &c, nil
+		}
+	}
+
+	// 상장사가 없으면 에러 — 비상장 법인으로 재무데이터 조회 시 DART 오류 방지
+	return nil, fmt.Errorf(`"%s"에 해당하는 상장 기업을 찾을 수 없습니다. 종목코드로 다시 시도해보세요 (예: finsight search %s)`, query, query)
 }
 
 func isDigits(s string) bool {

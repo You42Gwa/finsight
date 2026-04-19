@@ -283,10 +283,18 @@ finsight analyze ./report.pdf --skip-classify      # 문서 분류 단계 생략
 ```bash
 finsight compare 005930 000660
 finsight compare 삼성전자 SK하이닉스
+finsight compare 카카오 네이버               # 한글 통용명 자동 해석
 finsight compare 005930 000660 --type half         # 반기보고서 기준 비교
 finsight compare 005930 000660 --fs 별도           # 별도재무제표 기준
 finsight compare 005930 000660 --output json       # JSON 출력
 ```
+
+> **회사명 해석 우선순위**
+> 1. 한글 통용명 alias (예: `네이버` → DART 등록명 `NAVER`)
+> 2. DART 법인명 정확 일치 (대소문자 무시)
+> 3. 법인명 부분 일치 중 상장사(종목코드 있는 곳) 첫 번째
+>
+> 상장사 매칭이 불가능하면 종목코드 사용을 권장합니다 (`finsight search <쿼리>` 로 코드 확인).
 
 ```
   항목              삼성전자              SK하이닉스
