@@ -17,7 +17,8 @@ finsight report --ticker <코드> --type q3            # 3분기보고서 분석
 finsight report --ticker <코드> --fs 별도            # 별도 재무제표
 finsight report <파일경로>                           # 로컬 PDF 분석
 
-finsight compare <종목1> <종목2>                     # 두 종목 나란히 비교
+finsight compare <종목1> <종목2>                     # 두 종목 나란히 비교 (종목코드 또는 회사명)
+finsight compare 카카오 네이버                        # 한글 통용명 자동 해석 지원
 finsight compare <종목1> <종목2> --type half         # 반기보고서 기준 비교
 finsight compare <종목1> <종목2> --output json       # JSON 출력
 
@@ -42,7 +43,7 @@ finsight cache status                                # 캐시 상태 확인
 When the user asks to:
 - **기업 검색**: Run `finsight search <쿼리>` and present the results
 - **재무 분석**: Run `finsight report --ticker <코드> --agent` and summarize the output
-- **두 종목 비교**: Run `finsight compare <종목1> <종목2> --agent` and present side-by-side
+- **두 종목 비교**: Run `finsight compare <종목1> <종목2> --agent` and present side-by-side. 종목코드·회사명·한글 통용명(네이버, 넥슨 등) 모두 사용 가능. 매칭 실패 시 `finsight search <쿼리>`로 종목코드를 확인하세요.
 - **공시 PDF 분석**: Run `finsight report <경로> --agent`
 - **지표만 추출**: Run `finsight extract <경로> --output json`
 
