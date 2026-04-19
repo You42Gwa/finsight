@@ -222,8 +222,9 @@ func GetCorpCodes(apiKey string, force bool) ([]CorpCode, error) {
 	if err = os.MkdirAll(cacheDir, 0o755); err != nil {
 		return nil, err
 	}
-	raw, _ := json.Marshal(corps)
-	_ = os.WriteFile(cacheFile, raw, 0o644)
+	if raw, err := json.Marshal(corps); err == nil {
+		_ = os.WriteFile(cacheFile, raw, 0o644)
+	}
 	return corps, nil
 }
 

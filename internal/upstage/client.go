@@ -128,11 +128,17 @@ func ParseDocument(apiKey, filePath, mode string) (*ParseResult, error) {
 
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
-	_ = w.WriteField("model", "document-parse")
-	_ = w.WriteField("mode", mode)
-	_ = w.WriteField("output_formats", `["markdown","text"]`)
-	_ = w.WriteField("chart_recognition", "true")
-	_ = w.WriteField("merge_multipage_tables", "true")
+	for _, pair := range [][2]string{
+		{"model", "document-parse"},
+		{"mode", mode},
+		{"output_formats", `["markdown","text"]`},
+		{"chart_recognition", "true"},
+		{"merge_multipage_tables", "true"},
+	} {
+		if err := w.WriteField(pair[0], pair[1]); err != nil {
+			return nil, fmt.Errorf("form 필드 쓰기 실패 (%s): %w", pair[0], err)
+		}
+	}
 	part, err := w.CreateFormFile("document", filepath.Base(filePath))
 	if err != nil {
 		return nil, err

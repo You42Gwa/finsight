@@ -96,7 +96,11 @@ func runDartReport() {
 			Corp      interface{} `json:"corp"`
 			Financials interface{} `json:"financials"`
 		}
-		data, _ := json.MarshalIndent(out{corp, fin}, "", "  ")
+		data, err := json.MarshalIndent(out{corp, fin}, "", "  ")
+		if err != nil {
+			output.PrintError("JSON 직렬화 실패: " + err.Error())
+			return
+		}
 		fmt.Println(string(data))
 		return
 	}
@@ -150,7 +154,11 @@ func runPDFReport(filePath string) {
 			Confidence float64     `json:"confidence"`
 			Financials interface{} `json:"financials"`
 		}
-		data, _ := json.MarshalIndent(out{docType, confidence, fin}, "", "  ")
+		data, err := json.MarshalIndent(out{docType, confidence, fin}, "", "  ")
+		if err != nil {
+			output.PrintError("JSON 직렬화 실패: " + err.Error())
+			return
+		}
 		fmt.Println(string(data))
 		return
 	}

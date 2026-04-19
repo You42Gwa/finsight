@@ -149,7 +149,11 @@ func fmtAmount(val float64, unit string) string {
 // Pass asJSON=true for structured JSON output.
 func PrintFinancials(fin *model.Financials, asJSON bool) {
 	if asJSON {
-		data, _ := json.MarshalIndent(fin, "", "  ")
+		data, err := json.MarshalIndent(fin, "", "  ")
+		if err != nil {
+			PrintError("JSON 직렬화 실패: " + err.Error())
+			return
+		}
 		fmt.Println(string(data))
 		return
 	}
@@ -429,8 +433,17 @@ func PrintCompare(entries []CompareEntry, asJSON bool) {
 		for _, e := range entries {
 			out = append(out, jsonEntry{e.CorpName, e.StockCode, e.Fin})
 		}
-		data, _ := json.MarshalIndent(out, "", "  ")
+		data, err := json.MarshalIndent(out, "", "  ")
+		if err != nil {
+			PrintError("JSON 직렬화 실패: " + err.Error())
+			return
+		}
 		fmt.Println(string(data))
+		return
+	}
+
+	if len(entries) < 2 || entries[0].Fin == nil || entries[1].Fin == nil {
+		PrintError("비교 데이터가 불완전합니다")
 		return
 	}
 

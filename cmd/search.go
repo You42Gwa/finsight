@@ -79,7 +79,11 @@ var searchCmd = &cobra.Command{
 func printFilings(apiKey string, corp dart.CorpCode) {
 	filings, err := dart.GetFilings(apiKey, corp.CorpCode, "A,B,C", "20220101", 5)
 	output.PrintFilingHeader(corp.CorpName)
-	if err != nil || len(filings) == 0 {
+	if err != nil {
+		output.PrintError("공시 조회 실패: " + err.Error())
+		return
+	}
+	if len(filings) == 0 {
 		fmt.Println("  공시 내역 없음")
 		return
 	}
