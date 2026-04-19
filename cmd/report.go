@@ -59,8 +59,9 @@ func runDartReport() {
 		query = reportCompany
 	}
 
-	output.PrintRule("finsight — DART: " + query)
-
+	if !output.AgentMode {
+		output.PrintRule("finsight — DART: " + query)
+	}
 	if !output.NoColor {
 		fmt.Printf("1/3  기업 조회 중: %s ...\n", query)
 	}
@@ -73,7 +74,9 @@ func runDartReport() {
 		output.PrintError(fmt.Sprintf(`"%s"에 해당하는 기업을 찾을 수 없습니다. finsight search 로 먼저 검색하세요.`, query))
 		return
 	}
-	output.PrintCorpInfo(corp.CorpName, corp.StockCode, corp.CorpCode)
+	if !output.AgentMode {
+		output.PrintCorpInfo(corp.CorpName, corp.StockCode, corp.CorpCode)
+	}
 
 	if !output.NoColor {
 		fmt.Printf("2/3  DART 재무제표 조회 중 (fs=%s) ...\n", reportFsDiv)
@@ -119,15 +122,16 @@ func runDartReport() {
 func runPDFReport(filePath string) {
 	apiKey := mustUpstageKey()
 
-	output.PrintRule("finsight — " + filePath)
-
+	if !output.AgentMode {
+		output.PrintRule("finsight — " + filePath)
+	}
 	if !output.NoColor {
 		fmt.Println("1/3  문서 분류 중 ...")
 	}
 	docType, confidence, err := upstage.ClassifyDocument(apiKey, filePath)
 	if err != nil {
 		output.PrintError("문서 분류 실패 (건너뜀): " + err.Error())
-	} else {
+	} else if !output.AgentMode {
 		output.PrintDocType(docType, confidence)
 	}
 
