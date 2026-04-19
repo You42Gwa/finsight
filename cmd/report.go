@@ -98,8 +98,6 @@ func runDartReport() {
 		return
 	}
 
-	output.PrintFinancials(fin, false)
-
 	if !output.NoColor {
 		fmt.Println("3/3  Solar Pro 3 분석 중 (reasoning=high) ...")
 	}
@@ -108,6 +106,12 @@ func runDartReport() {
 		output.PrintError(err.Error())
 		return
 	}
+
+	if output.AgentMode {
+		output.PrintAgentReport(corp.CorpName, corp.StockCode, analysis, fin)
+		return
+	}
+	output.PrintFinancials(fin, false)
 	output.PrintAnalysis(analysis)
 	output.PrintFooter("finsight  ·  DART OpenAPI + Upstage Solar Pro 3")
 }
@@ -147,8 +151,6 @@ func runPDFReport(filePath string) {
 		return
 	}
 
-	output.PrintFinancials(fin, false)
-
 	if !output.NoColor {
 		fmt.Println("3/3  Solar Pro 3 분석 중 (reasoning=high) ...")
 	}
@@ -157,6 +159,12 @@ func runPDFReport(filePath string) {
 		output.PrintError(err.Error())
 		return
 	}
+
+	if output.AgentMode {
+		output.PrintAgentReport(fin.CompanyName, "", analysis, fin)
+		return
+	}
+	output.PrintFinancials(fin, false)
 	output.PrintAnalysis(analysis)
 	output.PrintFooter("finsight  ·  Upstage document-parse + information-extract + Solar Pro 3")
 }

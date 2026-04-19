@@ -16,6 +16,10 @@ import (
 // NoColor disables ANSI color output when true. Set via --no-color flag.
 var NoColor bool
 
+// AgentMode enables compact summary output and suppresses progress messages.
+// Implies NoColor=true.
+var AgentMode bool
+
 var (
 	styleBold   = color.New(color.Bold)
 	styleCyan   = color.New(color.FgCyan)
@@ -339,5 +343,213 @@ func Tip(msg string) {
 		fmt.Println(msg)
 	} else {
 		fmt.Println(c(styleDim, msg))
+	}
+}
+
+// fmtAmountPlain returns a scaled amount string without the unit suffix in parentheses.
+func fmtAmountPlain(val float64, unit string) string {
+	if val == 0 {
+		return "N/A"
+	}
+	sign := ""
+	if val < 0 {
+		sign = "-"
+	}
+	abs := math.Abs(val)
+	switch {
+	case abs >= 1e12:
+		return sign + fmt.Sprintf("%.1f조", abs/1e12)
+	case abs >= 1e8:
+		return sign + fmt.Sprintf("%.0f억", abs/1e8)
+	default:
+		return sign + fmt.Sprintf("%.0f%s", abs, unit)
+	}
+}
+
+// PrintAgentReport prints a compact one-block summary for AI agent pipelines.
+func PrintAgentReport(corpName, stockCode, analysis string, fin *model.Financials) {
+	unit := fin.Unit
+	if unit == "" {
+		unit = "원"
+	}
+	opMargin, netMargin, debtRatio, roe := 0.0, 0.0, 0.0, 0.0
+	if fin.Revenue != 0 {
+		opMargin = fin.OperatingProfit / fin.Revenue * 100
+		netMargin = fin.NetIncome / fin.Revenue * 100
+	}
+	if fin.TotalEquity != 0 {
+		debtRatio = fin.TotalLiabilities / fin.TotalEquity * 100
+		roe = fin.NetIncome / fin.TotalEquity * 100
+	}
+	ticker := ""
+	if strings.TrimSpace(stockCode) != "" {
+		ticker = " | " + stockCode
+	}
+	fmt.Printf("[%s%s | %s]\n", corpName, ticker, fin.FiscalPeriod)
+	fmt.Printf("매출 %s | 영업이익 %s (%.1f%%) | 순이익 %s (%.1f%%)\n",
+		fmtAmountPlain(fin.Revenue, unit),
+		fmtAmountPlain(fin.OperatingProfit, unit), opMargin,
+		fmtAmountPlain(fin.NetIncome, unit), netMargin,
+	)
+	line := fmt.Sprintf("자산 %s | 자본 %s | 부채비율 %.1f%% | ROE %.1f%%",
+		fmtAmountPlain(fin.TotalAssets, unit),
+		fmtAmountPlain(fin.TotalEquity, unit),
+		debtRatio, roe,
+	)
+	if fin.EPS != 0 {
+		line += fmt.Sprintf(" | EPS %.0f원", fin.EPS)
+	}
+	fmt.Println(line)
+	if fin.OperatingCashflow != 0 {
+		fmt.Printf("영업CF %s\n", fmtAmountPlain(fin.OperatingCashflow, unit))
+	}
+	if analysis != "" {
+		fmt.Println()
+		fmt.Println("[AI 분석]")
+		fmt.Println(analysis)
+	}
+}
+
+// CompareEntry holds one company's data for side-by-side comparison.
+type CompareEntry struct {
+	CorpName  string
+	StockCode string
+	Fin       *model.Financials
+}
+
+// PrintCompare prints a side-by-side comparison table for two companies.
+func PrintCompare(entries []CompareEntry, asJSON bool) {
+	if asJSON {
+		type jsonEntry struct {
+			CorpName   string            `json:"corp_name"`
+			StockCode  string            `json:"stock_code"`
+			Financials *model.Financials `json:"financials"`
+		}
+		var out []jsonEntry
+		for _, e := range entries {
+			out = append(out, jsonEntry{e.CorpName, e.StockCode, e.Fin})
+		}
+		data, _ := json.MarshalIndent(out, "", "  ")
+		fmt.Println(string(data))
+		return
+	}
+
+	// Derived ratios per entry
+	type ratios struct{ opMargin, netMargin, debtRatio, roe float64 }
+	calc := func(fin *model.Financials) ratios {
+		r := ratios{}
+		if fin.Revenue != 0 {
+			r.opMargin = fin.OperatingProfit / fin.Revenue * 100
+			r.netMargin = fin.NetIncome / fin.Revenue * 100
+		}
+		if fin.TotalEquity != 0 {
+			r.debtRatio = fin.TotalLiabilities / fin.TotalEquity * 100
+			r.roe = fin.NetIncome / fin.TotalEquity * 100
+		}
+		return r
+	}
+
+	r0 := calc(entries[0].Fin)
+	r1 := calc(entries[1].Fin)
+
+	unit0 := entries[0].Fin.Unit
+	if unit0 == "" {
+		unit0 = "원"
+	}
+	unit1 := entries[1].Fin.Unit
+	if unit1 == "" {
+		unit1 = "원"
+	}
+
+	epsStr := func(fin *model.Financials) string {
+		if fin.EPS == 0 {
+			return "N/A"
+		}
+		return fmt.Sprintf("%.0f원", fin.EPS)
+	}
+
+	type row struct {
+		label string
+		v0    string
+		v1    string
+	}
+	rows := []row{
+		{"회계 기간", entries[0].Fin.FiscalPeriod, entries[1].Fin.FiscalPeriod},
+		{"", "", ""},
+		{"매출액", fmtAmount(entries[0].Fin.Revenue, unit0), fmtAmount(entries[1].Fin.Revenue, unit1)},
+		{"영업이익", fmtAmount(entries[0].Fin.OperatingProfit, unit0), fmtAmount(entries[1].Fin.OperatingProfit, unit1)},
+		{"당기순이익", fmtAmount(entries[0].Fin.NetIncome, unit0), fmtAmount(entries[1].Fin.NetIncome, unit1)},
+		{"자산총계", fmtAmount(entries[0].Fin.TotalAssets, unit0), fmtAmount(entries[1].Fin.TotalAssets, unit1)},
+		{"자본총계", fmtAmount(entries[0].Fin.TotalEquity, unit0), fmtAmount(entries[1].Fin.TotalEquity, unit1)},
+		{"부채총계", fmtAmount(entries[0].Fin.TotalLiabilities, unit0), fmtAmount(entries[1].Fin.TotalLiabilities, unit1)},
+		{"영업활동CF", fmtAmount(entries[0].Fin.OperatingCashflow, unit0), fmtAmount(entries[1].Fin.OperatingCashflow, unit1)},
+		{"EPS", epsStr(entries[0].Fin), epsStr(entries[1].Fin)},
+		{"", "", ""},
+		{"영업이익률", fmt.Sprintf("%.1f%%", r0.opMargin), fmt.Sprintf("%.1f%%", r1.opMargin)},
+		{"순이익률", fmt.Sprintf("%.1f%%", r0.netMargin), fmt.Sprintf("%.1f%%", r1.netMargin)},
+		{"부채비율", fmt.Sprintf("%.1f%%", r0.debtRatio), fmt.Sprintf("%.1f%%", r1.debtRatio)},
+		{"ROE", fmt.Sprintf("%.1f%%", r0.roe), fmt.Sprintf("%.1f%%", r1.roe)},
+	}
+
+	// Dynamic column widths
+	wLabel := 10
+	for _, r := range rows {
+		if v := visWidth(r.label); v > wLabel {
+			wLabel = v
+		}
+	}
+	wVal := 20
+	for _, r := range rows {
+		if v := visWidth(r.v0); v+2 > wVal {
+			wVal = v + 2
+		}
+		if v := visWidth(r.v1); v+2 > wVal {
+			wVal = v + 2
+		}
+	}
+	// Clamp to avoid excessively wide columns
+	if wVal > 28 {
+		wVal = 28
+	}
+
+	totalW := wLabel + wVal*2 + 6
+	divider := strings.Repeat("─", totalW)
+
+	header0 := entries[0].CorpName
+	header1 := entries[1].CorpName
+
+	if NoColor {
+		fmt.Println(strings.Repeat("=", totalW))
+		fmt.Printf("  %s  %s  %s\n", padRight("항목", wLabel), padRight(header0, wVal), header1)
+		fmt.Println(strings.Repeat("-", totalW))
+		for _, r := range rows {
+			if r.label == "" {
+				fmt.Println(strings.Repeat("-", totalW))
+				continue
+			}
+			fmt.Printf("  %s  %s  %s\n", padRight(r.label, wLabel), padRight(r.v0, wVal), r.v1)
+		}
+		fmt.Println(strings.Repeat("=", totalW))
+	} else {
+		fmt.Println()
+		fmt.Printf("  %s  %s  %s\n",
+			c(styleDim, padRight("항목", wLabel)),
+			c(styleBold, padRight(header0, wVal)),
+			c(styleBold, header1),
+		)
+		fmt.Println("  " + c(styleDim, divider))
+		for _, r := range rows {
+			if r.label == "" {
+				fmt.Println("  " + c(styleDim, divider))
+				continue
+			}
+			fmt.Printf("  %s  %s  %s\n",
+				c(styleCyan, padRight(r.label, wLabel)),
+				padRight(r.v0, wVal),
+				r.v1,
+			)
+		}
+		fmt.Println("  " + c(styleDim, divider))
+		fmt.Println()
 	}
 }

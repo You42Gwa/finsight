@@ -34,6 +34,12 @@ func Execute() {
 func init() {
 	_ = godotenv.Load()
 	rootCmd.PersistentFlags().BoolVar(&output.NoColor, "no-color", false, "AI agent 파이프용 plain text 출력")
+	rootCmd.PersistentFlags().BoolVar(&output.AgentMode, "agent", false, "AI 에이전트용 요약 텍스트 출력 (--no-color 포함)")
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		if output.AgentMode {
+			output.NoColor = true
+		}
+	}
 }
 
 // mustUpstageKey exits if UPSTAGE_API_KEY is not set.
