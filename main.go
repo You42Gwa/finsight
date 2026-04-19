@@ -1,6 +1,6 @@
 package main
 
-import "github.com/finsight-cli/finsight/cmd"
+import "github.com/You42Gwa/finsight/cmd"
 
 func main() {
 	cmd.Execute()
