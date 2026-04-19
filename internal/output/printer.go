@@ -10,7 +10,7 @@ import (
 	"unicode"
 
 	"github.com/fatih/color"
-	"github.com/finsight-cli/finsight/internal/model"
+	"github.com/You42Gwa/finsight/internal/model"
 )
 
 // NoColor disables ANSI color output when true. Set via --no-color flag.

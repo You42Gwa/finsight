@@ -103,7 +103,7 @@ finsight — DART: 005930
 ### 소스 빌드 (권장 — Go 1.22+)
 
 ```bash
-git clone https://github.com/finsight-cli/finsight
+git clone https://github.com/You42Gwa/finsight
 cd finsight
 go build -o finsight .
 ```
@@ -111,7 +111,7 @@ go build -o finsight .
 ### go install
 
 ```bash
-go install github.com/finsight-cli/finsight@latest
+go install github.com/You42Gwa/finsight@latest
 ```
 
 ### API 키 설정

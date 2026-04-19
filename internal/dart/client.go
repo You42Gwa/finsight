@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/finsight-cli/finsight/internal/model"
+	"github.com/You42Gwa/finsight/internal/model"
 )
 
 const dartBase = "https://opendart.fss.or.kr/api"

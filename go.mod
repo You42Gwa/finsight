@@ -1,4 +1,4 @@
-module github.com/finsight-cli/finsight
+module github.com/You42Gwa/finsight
 
 go 1.22
 

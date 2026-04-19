@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/finsight-cli/finsight/internal/output"
+	"github.com/You42Gwa/finsight/internal/output"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 )

@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/finsight-cli/finsight/internal/output"
-	"github.com/finsight-cli/finsight/internal/upstage"
+	"github.com/You42Gwa/finsight/internal/output"
+	"github.com/You42Gwa/finsight/internal/upstage"
 	"github.com/spf13/cobra"
 )
 

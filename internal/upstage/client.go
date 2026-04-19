@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/finsight-cli/finsight/internal/model"
+	"github.com/You42Gwa/finsight/internal/model"
 )
 
 const baseURL = "https://api.upstage.ai/v1"
