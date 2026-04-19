@@ -261,9 +261,10 @@ func SearchByName(apiKey, name string) ([]CorpCode, error) {
 	if err != nil {
 		return nil, err
 	}
+	nameLower := strings.ToLower(name)
 	var listed, unlisted []CorpCode
 	for _, c := range corps {
-		if strings.Contains(c.CorpName, name) {
+		if strings.Contains(strings.ToLower(c.CorpName), nameLower) {
 			if strings.TrimSpace(c.StockCode) != "" {
 				listed = append(listed, c)
 			} else {
@@ -302,7 +303,7 @@ func FindCompany(apiKey, query string) (*CorpCode, error) {
 		return nil, nil
 	}
 	for _, c := range results {
-		if c.CorpName == query {
+		if strings.EqualFold(c.CorpName, query) {
 			return &c, nil
 		}
 	}
