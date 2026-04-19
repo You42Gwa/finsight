@@ -51,6 +51,7 @@ finsight — DART: 005930
 - [데이터 파이프라인](#데이터-파이프라인)
 - [설치](#설치)
 - [커맨드 레퍼런스](#커맨드-레퍼런스)
+- [전역 플래그](#전역-플래그)
 - [출력 형식](#출력-형식)
 - [실전 활용 패턴](#실전-활용-패턴)
 - [Claude Code 연동](#claude-code--ai-agent-연동)
@@ -146,8 +147,6 @@ finsight cache refresh
 ---
 
 ## 커맨드 레퍼런스
-
-> `--no-color` 는 모든 커맨드에서 사용할 수 있는 전역 플래그입니다.
 
 ---
 
@@ -277,12 +276,74 @@ finsight analyze ./report.pdf --skip-classify      # 문서 분류 단계 생략
 
 ---
 
-## 출력 형식
+### `compare` — 두 종목 비교
+
+두 종목을 병렬로 조회해 재무지표를 나란히 비교합니다. 종목코드와 회사명 모두 사용 가능합니다.
+
+```bash
+finsight compare 005930 000660
+finsight compare 삼성전자 SK하이닉스
+finsight compare 005930 000660 --type half         # 반기보고서 기준 비교
+finsight compare 005930 000660 --fs 별도           # 별도재무제표 기준
+finsight compare 005930 000660 --output json       # JSON 출력
+```
+
+```
+  항목              삼성전자              SK하이닉스
+  ──────────────────────────────────────────────────
+  회계 기간         2025년 사업보고서     2025년 사업보고서
+
+  매출액            333.6조 (원)          66.2조 (원)
+  영업이익          43.6조 (원)           23.5조 (원)
+  ...
+  ──────────────────────────────────────────────────
+  영업이익률        13.1%                 35.5%
+  부채비율          29.9%                 57.2%
+  ROE               10.4%                 29.3%
+```
+
+| 플래그 | 기본값 | 설명 |
+|--------|--------|------|
+| `--type` | `annual` | 보고서 유형: `annual` \| `half` \| `q1` \| `q3` |
+| `--fs` | `연결` | 재무제표 구분: `연결` \| `별도` |
+| `--output` | `table` | 출력 형식: `table` \| `json` |
+
+---
+
+## 전역 플래그
+
+모든 커맨드에서 사용할 수 있는 플래그입니다.
 
 | 플래그 | 설명 | 용도 |
 |--------|------|------|
+| `--no-color` | ANSI 없는 순수 텍스트 | 로그 파일·파이프 처리 |
+| `--agent` | 요약 텍스트 출력 (`--no-color` 포함) | LLM·AI 에이전트 파이프라인 |
+
+`--agent` 를 사용하면 진행 메시지 없이 결과만 한 블록으로 출력됩니다.
+
+```bash
+finsight report --ticker 005930 --agent
+```
+
+```
+[삼성전자 | 005930 | 2025년 사업보고서]
+매출 333.6조 | 영업이익 43.6조 (13.1%) | 순이익 45.2조 (13.6%)
+자산 566.9조 | 자본 436.3조 | 부채비율 29.9% | ROE 10.4% | EPS 6,605원
+영업CF 85.3조
+
+[AI 분석]
+영업이익률·순이익률 모두 13% 수준의 높은 마진 유지...
+```
+
+---
+
+## 출력 형식
+
+| 옵션 | 설명 | 용도 |
+|------|------|------|
 | 기본 | 컬러·볼드·정렬 적용 | 터미널 직접 확인 |
-| `--no-color` | ANSI 없는 순수 텍스트 (전역 플래그) | 로그 파일·파이프 처리 |
+| `--no-color` | ANSI 없는 순수 텍스트 | 로그 파일·파이프 처리 |
+| `--agent` | 요약 텍스트 (진행 메시지 없음) | LLM·AI 에이전트 |
 | `--output json` | 구조화 JSON (stdout) | 자동화·데이터 수집 |
 
 ---
@@ -307,6 +368,13 @@ finsight report --ticker 005930 --type annual --output json > annual.json
 # 연결 vs 별도 비교
 finsight report --ticker 005930           --output json > consolidated.json
 finsight report --ticker 005930 --fs 별도 --output json > separate.json
+
+# 경쟁사 비교
+finsight compare 005930 000660
+finsight compare 005930 000660 --output json | jq '.[].financials.operating_profit'
+
+# AI 에이전트 파이프라인 — 요약 텍스트를 LLM에 전달
+finsight report --ticker 005930 --agent | your-llm-tool
 ```
 
 ---
@@ -319,7 +387,7 @@ finsight report --ticker 005930 --fs 별도 --output json > separate.json
 /finsight 삼성전자 2025년 3분기 재무 분석해줘
 ```
 
-AI Agent가 파이프로 연동할 때는 `--no-color --output json` 조합을 권장합니다.
+AI Agent가 파이프로 연동할 때는 `--agent`(요약 텍스트) 또는 `--no-color --output json`(구조화 데이터) 조합을 권장합니다.
 
 ---
 
@@ -331,8 +399,9 @@ finsight/
 ├── go.mod / go.sum
 ├── .env.example
 ├── cmd/                          CLI 커맨드 (cobra)
-│   ├── root.go                   환경변수 로드, 전역 플래그 (--no-color)
+│   ├── root.go                   환경변수 로드, 전역 플래그 (--no-color, --agent)
 │   ├── report.go                 풀 파이프라인 (DART + PDF 양 경로)
+│   ├── compare.go                두 종목 병렬 비교
 │   ├── search.go                 기업 검색 + 공시 목록
 │   ├── analyze.go                AI 심층 분석 (PDF)
 │   ├── extract.go                재무지표 구조화 추출 (PDF)
