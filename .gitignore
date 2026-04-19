@@ -1,0 +1,24 @@
+# 환경 설정
+.env
+*.env.local
+
+# Go 빌드 결과물
+finsight
+finsight.exe
+*.exe
+dist/
+
+# 모듈 캐시 (go mod vendor 사용 시 제외)
+vendor/
+
+# 캐시
+.finsight/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
